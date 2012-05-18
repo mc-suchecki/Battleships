@@ -1,6 +1,24 @@
+# Java files
 *.class
-
-# Package Files #
 *.jar
 *.war
 *.ear
+
+# Eclipse files
+.project
+.classpath
+.settings/
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.metadata
+.loadpath
+.externalToolBuilders/
+*.launch
+.cproject
+.buildpath
