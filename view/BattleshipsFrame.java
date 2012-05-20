@@ -25,12 +25,16 @@ public class BattleshipsFrame extends JFrame {
   private final Board playerBoard, opponentBoard;
   private final JButton startNewGameButton;
   private final JLabel statusLabel;
+  private View view;
 
   /** Main window constructor. */
   BattleshipsFrame() {
     //setting window parameters
     super("Battleships");
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    
+    //acquiring upper View class reference
+    view = View.getInstance();
     
     //setting layout and look
     setLayout(new BorderLayout());
@@ -102,10 +106,10 @@ public class BattleshipsFrame extends JFrame {
         Enumeration<AbstractButton> en = bg.getElements();
         if(en.hasMoreElements()) {
           if(hostButton.isSelected()) {
-            //became host
+            view.connectToServer(ipTextField.getText());
           }
           else {
-            //became server
+            view.createServer();
           }
         }
         dialog.dispose();
@@ -128,4 +132,5 @@ public class BattleshipsFrame extends JFrame {
    
     dialog.setVisible(true);
   }
+
 }
