@@ -22,16 +22,12 @@ public class View {
     return instance;
   }
   
-  /**
-   * View class constructor.
-   */
+  /** View class constructor. */
   private View() {
     //todo
   }
   
-  /**
-   * Method for showing main window of the game.
-   */
+  /** Method for showing main window of the game. */
   public void showFrame() {
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {

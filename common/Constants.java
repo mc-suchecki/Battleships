@@ -7,4 +7,6 @@ package pl.mc.battleships.common;
 public class Constants {
   /** Number representing board field size */
   public final static int FIELD_SIZE = 20; 
+  /** Number representing port number used for connection */
+  public final static int PORT_NUMBER = 8080; 
 }
