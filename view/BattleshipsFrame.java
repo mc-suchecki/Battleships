@@ -4,8 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Enumeration;
-import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -103,16 +101,15 @@ public class BattleshipsFrame extends JFrame {
     dialog.add(panel);
     okButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        Enumeration<AbstractButton> en = bg.getElements();
-        if(en.hasMoreElements()) {
-          if(hostButton.isSelected()) {
+        if(hostButton.isSelected()) {
+          view.createServer();
+          dialog.dispose();
+        } else {
+          if(BattleshipsFrame.ipAddressIsValid(ipTextField.getText())) {
             view.connectToServer(ipTextField.getText());
-          }
-          else {
-            view.createServer();
+            dialog.dispose();
           }
         }
-        dialog.dispose();
       }
     });
     
@@ -133,4 +130,19 @@ public class BattleshipsFrame extends JFrame {
     dialog.setVisible(true);
   }
 
+  /** Method responsible for changing the statusLabel text */
+  public void changeStatus(final String newStatus) {
+    statusLabel.setText(newStatus);
+  }
+  
+  /** Method for validating inputed ip address */
+  private final static boolean ipAddressIsValid(final String ipAddress) {
+    String[] parts = ipAddress.split("\\.");
+    if(parts.length != 4) return false;
+    for(String s : parts) {
+      int i = Integer.parseInt(s);
+      if ((i < 0) || (i > 255)) return false;
+    }
+    return true;
+  }
 }

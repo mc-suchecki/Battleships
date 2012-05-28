@@ -1,7 +1,9 @@
 package pl.mc.battleships.view;
 
 import javax.swing.SwingUtilities;
-
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import pl.mc.battleships.common.events.GameEvent;
 import pl.mc.battleships.controller.Controller;
 
 /**
@@ -10,10 +12,9 @@ import pl.mc.battleships.controller.Controller;
  * the user interface and interacting with player during the gameplay.
  */
 public class View {
-  @SuppressWarnings("unused")
-  private Controller controller;
-  @SuppressWarnings("unused")
   private BattleshipsFrame frame;
+  @SuppressWarnings("unused")
+  private Connection controllerConnection;
 
   /** Implementation of a Singleton pattern. */
   private static View instance = null;
@@ -24,9 +25,7 @@ public class View {
   }
   
   /** View class constructor. */
-  private View() {
-    //todo
-  }
+  private View() {}
   
   /** Method for showing main window of the game. */
   public void showFrame() {
@@ -39,12 +38,28 @@ public class View {
   
   /** Method responsible for creating the server */
   void createServer() {
-    //initialize the controller
-    controller = Controller.getInstance();
+    final View view = this;
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        
+        //create needed objects and initialize the controller
+        BlockingQueue<GameEvent> eventQueue = new LinkedBlockingQueue<GameEvent>();
+        Controller controller = Controller.getInstance(eventQueue, view);
+        controller.run();
+        frame.changeStatus("Waiting for another player...");
+        controllerConnection = new LocalConnection(eventQueue);
+        
+      }
+    });
   }
   
   /** Method responsible for connecting to server */
-  void connectToServer(String ipAddress) {
-    
+  void connectToServer(final String ipAddress) {
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        //nothing to see here yet, move along
+        frame.changeStatus("Connecting to " + ipAddress + "...");
+      }
+    });
   }
 }
