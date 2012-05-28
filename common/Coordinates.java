@@ -6,7 +6,7 @@ public class Coordinates {
   
   /** Coordinates constructor */
   public Coordinates(int newX, int newY) {
-    if (newX < 0 || newX > 10 || newY < 0 || newY > 10) {
+    if(newX < 0 || newX > 10 || newY < 0 || newY > 10) {
       throw new IllegalArgumentException();
     } else {
       x = newX;

@@ -2,7 +2,8 @@ package pl.mc.battleships.controller;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import pl.mc.battleships.common.GameEvent;
+
+import pl.mc.battleships.common.events.GameEvent;
 import pl.mc.battleships.model.Model;
 
 /**
