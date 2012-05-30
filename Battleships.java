@@ -1,6 +1,6 @@
 package pl.mc.battleships;
 
-import pl.mc.battleships.view.*;
+import pl.mc.battleships.view.View;
 
 /**
  * @author Maciej 'mc' Suchecki

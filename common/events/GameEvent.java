@@ -5,6 +5,6 @@ package pl.mc.battleships.common.events;
  * Class representing game event, used to pass messages between
  * Model, View and Controller classes during the game.
  */
-public class GameEvent {
-
+public abstract class GameEvent {
+  //Nothing to see here, move around.
 }
