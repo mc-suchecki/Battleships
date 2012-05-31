@@ -44,7 +44,7 @@ public class View {
   }
   
   /** View class constructor. */
-  private View() { }
+  private View() {}
   
   /** Method for showing main window of the game. */
   public void showFrame() {
@@ -63,10 +63,12 @@ public class View {
         
         //create needed objects and initialize the controller
         BlockingQueue<GameEvent> eventQueue = new LinkedBlockingQueue<GameEvent>();
-        controllerConnection = new LocalConnection(eventQueue);
+        controllerConnection = new LocalConnection(eventQueue, view);
         frame.changeStatus("Waiting for another player...");
-        Controller.getInstance(eventQueue, view);
-        //controller.run();
+        
+        Controller controller = Controller.getInstance(eventQueue, controllerConnection);
+        Thread controllerThread = new Thread(controller);
+        controllerThread.start();
         
       }
     });
@@ -74,10 +76,12 @@ public class View {
   
   /** Method responsible for connecting to server */
   void connectToServer(final String ipAddress) {
+    final View view = this;
     SwingUtilities.invokeLater(new Runnable() {
       @Override public void run() {
-        //nothing to see here yet, move along
-        controllerConnection = new RemoteConnection(ipAddress);
+        controllerConnection = new RemoteConnection(ipAddress, view);
+        Thread connectionThread = new Thread((Runnable)controllerConnection);
+        connectionThread.start();
         frame.changeStatus("Connecting to " + ipAddress + "...");
       }
     });
@@ -88,6 +92,7 @@ public class View {
     SwingUtilities.invokeLater(new Runnable() {
       @Override public void run() {
         frame.refreshBoards(data);
+        frame.changeStatus("Please place your ship (press right mouse button to rotate)");
       }
     });   
   }
@@ -109,6 +114,7 @@ public class View {
      SwingUtilities.invokeLater(new Runnable() {
       @Override public void run() {
         frame.playerBoard.placeShip(ship);
+        frame.changeStatus("Please place your ship on the board (press right mouse button to rotate).");
       }
     });   
   }
@@ -134,6 +140,7 @@ public class View {
       view = View.getInstance();
       
       //setting layout and look
+      setFocusable(true);
       setLayout(new BorderLayout());
       JPanel bottom = new JPanel();
       bottom.setLayout(new BorderLayout());
@@ -145,12 +152,14 @@ public class View {
       //creating and displaying boards
       playerBoard = new Board();
       opponentBoard = new Board();
+      boards.add(playerBoard);
+      boards.add(opponentBoard);
+      
+      //adding mouse listeners
       PlayerBoardListener mouseListener = new PlayerBoardListener();
       playerBoard.addMouseListener(mouseListener);
       playerBoard.addMouseMotionListener(mouseListener);
       opponentBoard.addMouseListener(new OpponentBoardListener());
-      boards.add(playerBoard);
-      boards.add(opponentBoard);
       
       //creating and displaying other widgets
       statusLabel = new JLabel("Click 'New Game' button to continue");
@@ -251,7 +260,12 @@ public class View {
       @Override public void mousePressed(MouseEvent event) {
         try {
           if(event.getButton() == MouseEvent.BUTTON1 && controllerConnection != null)
-            controllerConnection.sendShipPlacedEvent(event.getX()/40, event.getY()/40, playerBoard.getCurrentlyPlacedShip());
+            controllerConnection.sendShipPlacedEvent(event.getX()/40, event.getY()/40,
+                playerBoard.getCurrentlyPlacedShip());
+          if(event.getButton() == MouseEvent.BUTTON3) {
+            playerBoard.placeShip(playerBoard.getCurrentlyPlacedShip().returnRotatedShip());
+            playerBoard.repaint();
+          }
         } catch(Exception e) {
           e.printStackTrace();
         }
@@ -275,7 +289,7 @@ public class View {
         }
       }   
     }
-    
+       
   }
  
 }

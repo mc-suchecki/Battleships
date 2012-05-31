@@ -3,6 +3,7 @@ package pl.mc.battleships.view;
 import java.util.concurrent.BlockingQueue;
 
 import pl.mc.battleships.common.ShipType;
+import pl.mc.battleships.common.events.ActionEvent;
 import pl.mc.battleships.common.events.GameEvent;
 import pl.mc.battleships.common.events.PlayerOneShipPlacedEvent;
 import pl.mc.battleships.common.events.PlayerOneShotEvent;
@@ -13,14 +14,21 @@ import pl.mc.battleships.common.events.PlayerOneShotEvent;
  */
 public class LocalConnection implements Connection {
   private final BlockingQueue<GameEvent> eventQueue;
+  private final View localView;
   
   /** LocalConnection constructor */
-  public LocalConnection(BlockingQueue<GameEvent> queue) {
+  public LocalConnection(BlockingQueue<GameEvent> queue, View view) {
     eventQueue = queue;
+    localView = view;
+  }
+  
+  /** Method responsible for executing View methods */
+  @Override public void sendActionEvent(final ActionEvent event) {
+    event.execute(localView);
   }
   
   /** Method responsible for sending shot event to controller */
-  public void sendShotEvent(final int x, final int y) {
+  @Override public void sendShotEvent(final int x, final int y) {
     GameEvent event = new PlayerOneShotEvent(x, y);
     try {
       eventQueue.put(event);

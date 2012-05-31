@@ -130,4 +130,5 @@ class Board extends JPanel {
   public void setMousePosition(Coordinates mousePosition) {
     this.mousePosition = mousePosition;
   }
+  
 }

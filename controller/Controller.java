@@ -7,7 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.*;
 import pl.mc.battleships.model.Model;
-import pl.mc.battleships.view.View;
+import pl.mc.battleships.view.Connection;
 
 /**
  * @author mc
@@ -16,12 +16,11 @@ import pl.mc.battleships.view.View;
  */
 public class Controller implements Runnable {
   /** References to other classes */
-  @SuppressWarnings("unused")
-  private final Model model;
-  private final View localView;
+  private final Connection localView, remoteView;
   private final BlockingQueue<GameEvent> eventQueue;
   @SuppressWarnings("unused")
-  private final Server server;
+  private final Model model;
+  
   /** Map associating GameEvents with appropriate actions */
   private final Map<Class<? extends GameEvent>, GameAction> eventActionMap;
   
@@ -29,21 +28,20 @@ public class Controller implements Runnable {
   private static Controller instance = null;
   /** @return Controller class instance. */
   public static synchronized Controller getInstance(
-      BlockingQueue<GameEvent> queue, View view) {
-    if(instance == null) instance = new Controller(queue, view);
+      BlockingQueue<GameEvent> queue, Connection viewConnection) {
+    if(instance == null) instance = new Controller(queue, viewConnection);
     return instance;
   }
   
   /** Controller class constructor. */
-  private Controller(BlockingQueue<GameEvent> queue, View view) {
+  private Controller(BlockingQueue<GameEvent> queue, Connection viewConnection) {
     eventActionMap = new HashMap<Class<? extends GameEvent>, GameAction>();
     fillEventActionMap();
     eventQueue = queue;
-    localView = view;
     model = new Model();
-    //server = new Server(queue);
-    server = null;
-    Thread thread = new Thread(this);
+    localView = viewConnection;
+    remoteView = new Server(queue);
+    Thread thread = new Thread((Runnable)remoteView);
     thread.start();
   }
   
@@ -57,7 +55,7 @@ public class Controller implements Runnable {
     //  wait for placeShipEvent!
     //}
     //do this for both Views asynchronously!
-    localView.placeShip(ShipType.AIRCRAFT_CARRIER_HORIZONTAL);
+    //localView.sendActionEvent(new PlaceShipAction(ShipType.BATTLESHIP_VERTICAL));
     while(true) {
       try {
         GameEvent event = eventQueue.take();
@@ -72,6 +70,13 @@ public class Controller implements Runnable {
  
   /** Method responsible for filling eventActionMap container */
   private void fillEventActionMap() {
+    
+    //handling player two connected event
+    eventActionMap.put(PlayerTwoConnectedEvent.class, new GameAction() {
+      @Override public void execute(GameEvent e) {
+        System.out.println("Player is connected!!!!!!");
+      }
+    });
     
     //handling player one ship placement event
     eventActionMap.put(PlayerOneShipPlacedEvent.class, new GameAction() {
