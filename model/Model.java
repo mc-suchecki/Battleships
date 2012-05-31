@@ -156,5 +156,21 @@ public class Model {
     
     return data;
   }
+  
+  /** Method for generating set of ships to place on board */
+  public List<ShipType> generateShipSet() {
+    List<ShipType> shipSet = new LinkedList<ShipType>();
+    shipSet.add(ShipType.BATTLESHIP_HORIZONTAL);
+    shipSet.add(ShipType.SUBMARINE_HORIZONTAL);
+    shipSet.add(ShipType.SUBMARINE_HORIZONTAL);
+    shipSet.add(ShipType.CRUISER_HORIZONTAL);
+    shipSet.add(ShipType.CRUISER_HORIZONTAL);
+    shipSet.add(ShipType.CRUISER_HORIZONTAL);
+    shipSet.add(ShipType.PATROL_BOAT);
+    shipSet.add(ShipType.PATROL_BOAT);
+    shipSet.add(ShipType.PATROL_BOAT);
+    shipSet.add(ShipType.PATROL_BOAT);
+    return shipSet;
+  }
    
 }

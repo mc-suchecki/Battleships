@@ -7,7 +7,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
-import pl.mc.battleships.common.Constants;
 import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.ActionEvent;
 import pl.mc.battleships.common.events.GameEvent;
@@ -35,7 +34,7 @@ public class Server implements Runnable, Connection {
   public void run() {
     //wait for connection and send message to Controller after it
     try {
-      serverSocket = new ServerSocket(Constants.PORT_NUMBER);
+      serverSocket = new ServerSocket(8080);
       socket = serverSocket.accept();  
       outputStream = new ObjectOutputStream(socket.getOutputStream());
       inputStream = new ObjectInputStream(socket.getInputStream());
@@ -55,6 +54,7 @@ public class Server implements Runnable, Connection {
       } catch(ClassNotFoundException e) {
         e.printStackTrace();
       } catch(IOException e1) {
+        //TODO handle client disconnection right here
         e1.printStackTrace();
       } catch(InterruptedException e2) {
         e2.printStackTrace();
@@ -63,8 +63,7 @@ public class Server implements Runnable, Connection {
   }
   
   /** Method responsible for closing the connections */
-  @SuppressWarnings("unused")
-  private void closeConnections() {
+  protected void finalize() {
     try {
       inputStream.close();
       outputStream.close();

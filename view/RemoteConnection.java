@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import pl.mc.battleships.common.Constants;
 import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.ActionEvent;
 import pl.mc.battleships.common.events.GameEvent;
@@ -34,7 +33,7 @@ public class RemoteConnection implements Runnable, Connection {
   public void run() {
     //wait for connection with Server class
     try {
-      socket = new Socket(ipAddress, Constants.PORT_NUMBER);
+      socket = new Socket(ipAddress, 8080);
       outputStream = new ObjectOutputStream(socket.getOutputStream());
       inputStream = new ObjectInputStream(socket.getInputStream());
     } catch(IOException e) {
@@ -56,8 +55,7 @@ public class RemoteConnection implements Runnable, Connection {
   }
   
   /** Method responsible for closing the connections */
-  @SuppressWarnings("unused")
-  private void closeConnections() {
+  protected void finalize() {
     try {
       inputStream.close();
       outputStream.close();

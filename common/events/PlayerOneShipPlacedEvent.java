@@ -7,6 +7,7 @@ import pl.mc.battleships.common.ShipType;
  * Class representing ship placed event for player one.
  */
 public class PlayerOneShipPlacedEvent extends GameEvent {
+  private static final long serialVersionUID = 1L;
   private final ShipType shipType;
   private final int x,y;
      

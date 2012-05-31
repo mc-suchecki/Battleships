@@ -1,5 +1,6 @@
 package pl.mc.battleships.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
@@ -18,8 +19,10 @@ public class Controller implements Runnable {
   /** References to other classes */
   private final Connection localView, remoteView;
   private final BlockingQueue<GameEvent> eventQueue;
-  @SuppressWarnings("unused")
   private final Model model;
+  
+  /** Lists of ships left to place on players boards */
+  private final List<ShipType> playerOneShipsLeft, playerTwoShipsLeft;
   
   /** Map associating GameEvents with appropriate actions */
   private final Map<Class<? extends GameEvent>, GameAction> eventActionMap;
@@ -35,27 +38,30 @@ public class Controller implements Runnable {
   
   /** Controller class constructor. */
   private Controller(BlockingQueue<GameEvent> queue, Connection viewConnection) {
-    eventActionMap = new HashMap<Class<? extends GameEvent>, GameAction>();
-    fillEventActionMap();
+    //creating and connecting to another objects
     eventQueue = queue;
     model = new Model();
     localView = viewConnection;
     remoteView = new Server(queue);
     Thread thread = new Thread((Runnable)remoteView);
     thread.start();
+    
+    //filling event map and ship lists
+    playerOneShipsLeft = model.generateShipSet();
+    playerTwoShipsLeft = model.generateShipSet();
+    eventActionMap = new HashMap<Class<? extends GameEvent>, GameAction>();
+    fillEventActionMap();
   }
   
   /** Main Controller method - responsible for reading objects
    *  from the eventQueue and handling GameEvents found in it */
   public void run() {
-    //TODO wait for connection and change status labels after acquiring it
     //TODO place ships like this:
     //for(ShipType ship : ships) {
     //  localView.placeShip(ship);
     //  wait for placeShipEvent!
     //}
     //do this for both Views asynchronously!
-    //localView.sendActionEvent(new PlaceShipAction(ShipType.BATTLESHIP_VERTICAL));
     while(true) {
       try {
         GameEvent event = eventQueue.take();
@@ -74,13 +80,15 @@ public class Controller implements Runnable {
     //handling player two connected event
     eventActionMap.put(PlayerTwoConnectedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        System.out.println("Player is connected!!!!!!");
+        localView.sendActionEvent(new PlaceShipAction(playerOneShipsLeft.get(0)));
+        remoteView.sendActionEvent(new PlaceShipAction(playerTwoShipsLeft.get(0)));
       }
     });
     
     //handling player one ship placement event
     eventActionMap.put(PlayerOneShipPlacedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
+        if(playerOneShipsLeft.isEmpty()) return;
         PlayerOneShipPlacedEvent event = (PlayerOneShipPlacedEvent) e;
         System.out.println("Player 1 placed ship type " + event.getShipType() + " on field " + event.getX() + "," + event.getY() + "!");
       }
@@ -89,7 +97,8 @@ public class Controller implements Runnable {
     //handling player two ship placement event
     eventActionMap.put(PlayerTwoShipPlacedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        PlayerOneShipPlacedEvent event = (PlayerOneShipPlacedEvent) e;
+        if(playerOneShipsLeft.isEmpty()) return;
+        PlayerTwoShipPlacedEvent event = (PlayerTwoShipPlacedEvent) e;
         System.out.println("Player 2 placed ship type " + event.getShipType() + " on field " + event.getX() + "," + event.getY() + "!");
       }
     });

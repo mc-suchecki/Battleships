@@ -92,7 +92,6 @@ public class View {
     SwingUtilities.invokeLater(new Runnable() {
       @Override public void run() {
         frame.refreshBoards(data);
-        frame.changeStatus("Please place your ship (press right mouse button to rotate)");
       }
     });   
   }
@@ -108,13 +107,21 @@ public class View {
     return true;
   }
   
-  /** Method for sending information to View containing
-   *  count and types of the ships that must be placed on the board */
+  /** Method for placing the ship on the board */
   public void placeShip(final ShipType ship) {
-     SwingUtilities.invokeLater(new Runnable() {
+    SwingUtilities.invokeLater(new Runnable() {
       @Override public void run() {
         frame.playerBoard.placeShip(ship);
         frame.changeStatus("Please place your ship on the board (press right mouse button to rotate).");
+      }
+    });   
+  }
+  
+  /** Method for changing the displayed status label */
+  public void changeStatus(final String status) {
+     SwingUtilities.invokeLater(new Runnable() {
+      @Override public void run() {
+        frame.changeStatus(status);
       }
     });   
   }

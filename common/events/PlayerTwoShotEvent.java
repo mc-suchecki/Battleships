@@ -5,6 +5,7 @@ package pl.mc.battleships.common.events;
  * Class representing shot event for player two.
  */
 public class PlayerTwoShotEvent extends GameEvent {
+  private static final long serialVersionUID = 1L;
   private final int x,y;
   
   /** PlayerOneShotEvent constructor */
