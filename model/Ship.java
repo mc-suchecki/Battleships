@@ -9,77 +9,36 @@ import pl.mc.battleships.common.ShipType;
  * @author mc
  * Class representing player ship.
  */
-public class Ship {
+class Ship {
   private final List<Mast> mastsList;
-  private ShipType shipType;
+  private final ShipType shipType;
   private Boolean sunken;
 
-  /** Ship class constructor */
-  public Ship(Coordinates begin, Coordinates end) {
-    int masts = 0;
+  /** Ship class constructor
+   *  @throws IllegalArgumentException if ship does not fit into the board.
+   */
+  public Ship(final Coordinates begin, final ShipType ship) {
     sunken = false;
+    shipType = ship;
     mastsList = new LinkedList<Mast>();
+    int x = begin.getX(), y = begin.getY();
     
-    //ship is horizontal - adding masts
-    if(begin.getX() == end.getX()) {
-      for(int y = begin.getY(); y != end.getY(); ++y) {
-        mastsList.add(new Mast(begin.getX(), y));
-        ++masts;
+    if(ship.isHorizontal()) {
+      for(int mastsCount = ship.getLength(); mastsCount != 0; --mastsCount) {
+        mastsList.add(new Mast(x, y));
+        ++x;
       }
-      
-      //initialize shipType field with proper value
-      switch(masts) {
-        case 1:
-          shipType = ShipType.PATROL_BOAT;
-          break;
-        case 2:
-          shipType = ShipType.CRUISER_HORIZONTAL;
-          break;
-        case 3:
-          shipType = ShipType.SUBMARINE_HORIZONTAL;
-          break;
-        case 4:
-          shipType = ShipType.BATTLESHIP_HORIZONTAL;
-          break;
-        case 5:
-          shipType = ShipType.AIRCRAFT_CARRIER_HORIZONTAL;
-          break;
+    } else {
+      for(int mastsCount = ship.getLength(); mastsCount != 0; --mastsCount) {
+        mastsList.add(new Mast(x, y));
+        ++y;
       }
     }
     
-    //ship is vertical - adding masts
-    else if(begin.getY() == end.getY()) {
-      for(int x = begin.getX(); x != end.getX(); ++x) {
-        mastsList.add(new Mast(x, begin.getY()));
-        ++masts;
-      }
-       
-      //initialize shipType field with proper value
-      switch(masts) {
-        case 1:
-          shipType = ShipType.PATROL_BOAT;
-          break;
-        case 2:
-          shipType = ShipType.CRUISER_VERTICAL;
-          break;
-        case 3:
-          shipType = ShipType.SUBMARINE_VERTICAL;
-          break;
-        case 4:
-          shipType = ShipType.BATTLESHIP_VERTICAL;
-          break;
-        case 5:
-          shipType = ShipType.AIRCRAFT_CARRIER_VERTICAL;
-          break;
-      }     
-      
-    //ship is neither horizontal nor vertical - error
-    } else
-      throw new IllegalArgumentException();
   }
   
   /** Method for shooting the ship's masts */
-  public Boolean shot(Coordinates coords) {
+  public Boolean shot(final Coordinates coords) {
     Boolean result = false;
     sunken = true;
     
@@ -111,12 +70,10 @@ public class Ship {
     return false;
   }
   
-
   /** @return ShipType enum representing this ship in dummy board */
   public ShipType getShipType() {
     return shipType;
   }
-
   
   /** @return coordinates of the beginning point of the ship */
   public Coordinates getBeginingCoordinates() {
@@ -130,13 +87,13 @@ class Mast {
   private Boolean hit;
   
   /** Mast constructor */
-  public Mast(int x, int y) {
+  public Mast(final int x, final int y) {
     coordinates = new Coordinates(x, y);
     hit = false;
   }
 
   /** Method for checking if shot hit the mast */
-  public Boolean shot(Coordinates coords) {
+  public Boolean shot(final Coordinates coords) {
     if(getCoordinates().getX() == coords.getX() &&
        getCoordinates().getY() == coords.getY()) hit = true;
     return hit;
@@ -148,14 +105,13 @@ class Mast {
   }
   
   /** @return true if another mast collides with this one */
-  public Boolean checkIfCollides(Mast another) {
+  public Boolean checkIfCollides(final Mast another) {
     if(Math.abs(this.getCoordinates().getX() - another.getCoordinates().getX()) <= 1 &&
        Math.abs(this.getCoordinates().getY() - another.getCoordinates().getY()) <= 1)
       return true;
     else
       return false;
   }
-  
 
   /** @return coordinates of the mast */
   public Coordinates getCoordinates() {

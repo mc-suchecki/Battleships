@@ -23,18 +23,18 @@ public class Model {
     playerTwoShips = new LinkedList<Ship>();
     playerOneShots = new ShotField[10][10];
     playerTwoShots = new ShotField[10][10];
-    for(int i = 0; i != 10; ++i)
-      for(int j = 0; j != 10; ++j) {
-        playerOneShots[i][j] = ShotField.EMPTY;
-        playerTwoShots[i][j] = ShotField.EMPTY;
-      }
+    //for(int i = 0; i != 10; ++i)
+      //for(int j = 0; j != 10; ++j) {
+        //playerOneShots[i][j] = ShotField.EMPTY;
+        //playerTwoShots[i][j] = ShotField.EMPTY;
+      //}
   }
   
   /** Method for adding player one ship
    *  @return true if ship was successfully added */
-  public Boolean putPlayerOneShip(final Coordinates begin, final Coordinates end) {
+  public Boolean putPlayerOneShip(final Coordinates begin, final ShipType type) {
     try {
-      Ship newShip = new Ship(begin, end);
+      Ship newShip = new Ship(begin, type);
       
       //checking if ship has good position
       for(Ship ship : playerOneShips)
@@ -51,9 +51,9 @@ public class Model {
   
   /** Method for adding player two ship
    *  @return true if ship was successfully added */
-  public Boolean putPlayerTwoShip(final Coordinates begin, final Coordinates end) {
+  public Boolean putPlayerTwoShip(final Coordinates begin, final ShipType type) {
     try {
-      Ship newShip = new Ship(begin, end);
+      Ship newShip = new Ship(begin, type);
       
       //checking if ship has good position
       for(Ship ship : playerTwoShips)
@@ -69,32 +69,34 @@ public class Model {
     return true;
   }
   
-  /** Method for shooting player one ship */
-  public void shotPlayerOneShip(final Coordinates coordinates) {
+  /** Method for shooting player two ships */
+  public boolean checkPlayerOneShot(final Coordinates coordinates) {
     
     //checking if shot hit any of the player ships
     for(Ship ship : playerOneShips) {
       if(ship.shot(coordinates)) {
-        playerTwoShots[coordinates.getX()][coordinates.getY()] = ShotField.HIT;
-        return;
-      }
-    }
-    
-    playerTwoShots[coordinates.getX()][coordinates.getY()] = ShotField.MISHIT;
-  }
-  
-  /** Method for shooting player two ship */
-  public void shotPlayerTwoShip(final Coordinates coordinates) {
-    
-    //checking if shot hit any of the player ships
-    for(Ship ship : playerTwoShips) {
-      if(ship.shot(coordinates)) {
         playerOneShots[coordinates.getX()][coordinates.getY()] = ShotField.HIT;
-        return;
+        return true;
       }
     }
     
     playerOneShots[coordinates.getX()][coordinates.getY()] = ShotField.MISHIT;
+    return false;
+  }
+  
+  /** Method for shooting player one ships */
+  public boolean checkPlayerTwoShot(final Coordinates coordinates) {
+    
+    //checking if shot hit any of the player ships
+    for(Ship ship : playerTwoShips) {
+      if(ship.shot(coordinates)) {
+        playerTwoShots[coordinates.getX()][coordinates.getY()] = ShotField.HIT;
+        return true;
+      }
+    }
+    
+    playerTwoShots[coordinates.getX()][coordinates.getY()] = ShotField.MISHIT;
+    return false;
   }
   
   /** Method for generating DataPack for player one View */
@@ -120,7 +122,7 @@ public class Model {
       if(ship.isSunken()) {
         ShipType type = ship.getShipType();
         Coordinates location = ship.getBeginingCoordinates();
-        data.playerShips[location.getX()][location.getY()] = type;
+        data.opponentShips[location.getX()][location.getY()] = type;
       }
     }
     
@@ -150,7 +152,7 @@ public class Model {
       if(ship.isSunken()) {
         ShipType type = ship.getShipType();
         Coordinates location = ship.getBeginingCoordinates();
-        data.playerShips[location.getX()][location.getY()] = type;
+        data.opponentShips[location.getX()][location.getY()] = type;
       }
     }
     
@@ -161,14 +163,14 @@ public class Model {
   public List<ShipType> generateShipSet() {
     List<ShipType> shipSet = new LinkedList<ShipType>();
     shipSet.add(ShipType.BATTLESHIP_HORIZONTAL);
+    //shipSet.add(ShipType.SUBMARINE_HORIZONTAL);
     shipSet.add(ShipType.SUBMARINE_HORIZONTAL);
-    shipSet.add(ShipType.SUBMARINE_HORIZONTAL);
-    shipSet.add(ShipType.CRUISER_HORIZONTAL);
-    shipSet.add(ShipType.CRUISER_HORIZONTAL);
+    //shipSet.add(ShipType.CRUISER_HORIZONTAL);
+    //shipSet.add(ShipType.CRUISER_HORIZONTAL);
     shipSet.add(ShipType.CRUISER_HORIZONTAL);
     shipSet.add(ShipType.PATROL_BOAT);
-    shipSet.add(ShipType.PATROL_BOAT);
-    shipSet.add(ShipType.PATROL_BOAT);
+    //shipSet.add(ShipType.PATROL_BOAT);
+    //shipSet.add(ShipType.PATROL_BOAT);
     shipSet.add(ShipType.PATROL_BOAT);
     return shipSet;
   }

@@ -169,7 +169,7 @@ public class View {
       opponentBoard.addMouseListener(new OpponentBoardListener());
       
       //creating and displaying other widgets
-      statusLabel = new JLabel("Click 'New Game' button to continue");
+      statusLabel = new JLabel("Click 'New Game' button to continue.");
       bottom.add(BorderLayout.LINE_START, statusLabel);
       startNewGameButton = new JButton("New Game");
       bottom.add(BorderLayout.LINE_END, startNewGameButton);
@@ -258,8 +258,8 @@ public class View {
     
     /** Method responsible for refreshing the boards */
     public void refreshBoards(final DataPack data) {
-      playerBoard.refreshBoard(data.playerShips, data.playerShots);
-      opponentBoard.refreshBoard(data.opponentShips, data.opponentShots);
+      playerBoard.refreshBoard(data.playerShips, data.opponentShots);
+      opponentBoard.refreshBoard(data.opponentShips, data.playerShots);
     }
     
     /** Listener responsible for handling mouse events on player board */
@@ -278,7 +278,7 @@ public class View {
         }
       }   
       @Override public void mouseMoved(MouseEvent event) {
-        if(playerBoard.getCurrentlyPlacedShip() != ShipType.EMPTY) {
+        if(playerBoard.getCurrentlyPlacedShip() != null) {
           playerBoard.setMousePosition(new Coordinates(event.getX()/40, event.getY()/40));
           playerBoard.repaint();
         }

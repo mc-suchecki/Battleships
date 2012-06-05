@@ -28,7 +28,7 @@ class Board extends JPanel {
 
   /** Constructor which creates the board. */
   Board() {
-    currentlyPlacedShip = ShipType.EMPTY;
+    currentlyPlacedShip = null;
     imageMap = new TreeMap<ShipType, Image>();
     fillImageMap();
     try {
@@ -46,7 +46,7 @@ class Board extends JPanel {
     g.drawImage(board, 0, 0, null);
     
     //draw currently placed ship
-    if(currentlyPlacedShip != ShipType.EMPTY)
+    if(currentlyPlacedShip != null)
       g.drawImage(imageMap.get(currentlyPlacedShip),
           mousePosition.getX()*40, mousePosition.getY()*40, null);
     
@@ -58,7 +58,7 @@ class Board extends JPanel {
             g.drawImage(hit,  i*40, j*40, null);
           if(shotsBoard[i][j] == ShotField.MISHIT)
             g.drawImage(mishit,  i*40, j*40, null);
-          if(shipsBoard[i][j] != ShipType.EMPTY)
+          if(shipsBoard[i][j] != null)
             g.drawImage(imageMap.get(shipsBoard[i][j]), i*40, j*40, null);
         }
     }

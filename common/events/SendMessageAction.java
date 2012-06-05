@@ -4,7 +4,7 @@ import pl.mc.battleships.view.View;
 
 /**
  * @author mc
- * Class representing sending message to player.
+ * Class representing sending message to player action.
  */
 public class SendMessageAction extends ActionEvent {
   private static final long serialVersionUID = 1L;

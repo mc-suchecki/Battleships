@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 
+import pl.mc.battleships.common.Coordinates;
 import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.*;
 import pl.mc.battleships.model.Model;
@@ -26,6 +27,10 @@ public class Controller implements Runnable {
   
   /** Map associating GameEvents with appropriate actions */
   private final Map<Class<? extends GameEvent>, GameAction> eventActionMap;
+  
+  /** Enum representing current state of the game */
+  private enum State {PLAYER_ONE_TURN, PLAYER_TWO_TURN};
+  private State state;
   
   /** Implementation of a Singleton pattern. */
   private static Controller instance = null;
@@ -56,12 +61,6 @@ public class Controller implements Runnable {
   /** Main Controller method - responsible for reading objects
    *  from the eventQueue and handling GameEvents found in it */
   public void run() {
-    //TODO place ships like this:
-    //for(ShipType ship : ships) {
-    //  localView.placeShip(ship);
-    //  wait for placeShipEvent!
-    //}
-    //do this for both Views asynchronously!
     while(true) {
       try {
         GameEvent event = eventQueue.take();
@@ -90,32 +89,92 @@ public class Controller implements Runnable {
       @Override public void execute(GameEvent e) {
         if(playerOneShipsLeft.isEmpty()) return;
         PlayerOneShipPlacedEvent event = (PlayerOneShipPlacedEvent) e;
-        System.out.println("Player 1 placed ship type " + event.getShipType() + " on field " + event.getX() + "," + event.getY() + "!");
+        
+        if(model.putPlayerOneShip(new Coordinates(event.getX(), event.getY()), event.getShipType())) {
+          playerOneShipsLeft.remove(event.getShipType());
+          localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        } else
+          localView.sendActionEvent(new SendMessageAction("Ship cannot be placed in that place! Try again."));
+        
+        
+        if(!playerOneShipsLeft.isEmpty())
+          localView.sendActionEvent(new PlaceShipAction(playerOneShipsLeft.get(0)));
+        else { 
+          if (playerTwoShipsLeft.isEmpty()) {
+            localView.sendActionEvent(new SendMessageAction("Your turn."));
+            remoteView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
+            state = State.PLAYER_ONE_TURN;
+          } else {
+            localView.sendActionEvent(new SendMessageAction("Please wait for another player."));
+          }
+        }
+          
       }
     });
     
     //handling player two ship placement event
     eventActionMap.put(PlayerTwoShipPlacedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        if(playerOneShipsLeft.isEmpty()) return;
+        if(playerTwoShipsLeft.isEmpty()) return;
         PlayerTwoShipPlacedEvent event = (PlayerTwoShipPlacedEvent) e;
-        System.out.println("Player 2 placed ship type " + event.getShipType() + " on field " + event.getX() + "," + event.getY() + "!");
+        
+        if(model.putPlayerTwoShip(new Coordinates(event.getX(), event.getY()), event.getShipType()))
+          playerTwoShipsLeft.remove(event.getShipType());
+        else
+          remoteView.sendActionEvent(new SendMessageAction("Ship cannot be placed in that place! Try again."));
+        
+        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        
+        if(!playerTwoShipsLeft.isEmpty())
+          remoteView.sendActionEvent(new PlaceShipAction(playerTwoShipsLeft.get(0)));
+        else { 
+          if (playerOneShipsLeft.isEmpty()) {
+            remoteView.sendActionEvent(new SendMessageAction("Your turn."));
+            localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
+            state = State.PLAYER_TWO_TURN;
+          } else {
+            remoteView.sendActionEvent(new SendMessageAction("Please wait for another player."));
+          }
+        }
+ 
       }
     });
     
     //handling player one shot event
     eventActionMap.put(PlayerOneShotEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
+        if(state != State.PLAYER_ONE_TURN) return;
         PlayerOneShotEvent event = (PlayerOneShotEvent) e;
-        System.out.println("Player 1 shot field " + event.getX() + "," + event.getY() + "!");
+        
+        boolean result = model.checkPlayerOneShot(new Coordinates(event.getX(), event.getY()));
+        
+        localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+          
+        if(!result) {
+          remoteView.sendActionEvent(new SendMessageAction("Your turn."));
+          localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
+          state = State.PLAYER_TWO_TURN;
+        }
       }
     });
     
     //handling player two shot event
     eventActionMap.put(PlayerTwoShotEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
+        if(state != State.PLAYER_TWO_TURN) return;
         PlayerTwoShotEvent event = (PlayerTwoShotEvent) e;
-        System.out.println("Player 2 shot field " + event.getX() + "," + event.getY() + "!");
+        
+        boolean result = model.checkPlayerTwoShot(new Coordinates(event.getX(), event.getY()));
+        
+        localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        
+        if(!result) {
+          remoteView.sendActionEvent(new SendMessageAction("Your turn."));
+          localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
+          state = State.PLAYER_TWO_TURN;
+        }
       }
     });
   }
