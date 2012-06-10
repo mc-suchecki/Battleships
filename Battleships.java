@@ -8,7 +8,7 @@ import pl.mc.battleships.view.View;
  */
 public class Battleships {
   public static void main(String[] args) {
-    View view = View.getInstance();
+    View view = new View();
     view.showFrame();
   }
 }

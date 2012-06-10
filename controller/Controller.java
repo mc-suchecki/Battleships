@@ -1,15 +1,13 @@
 package pl.mc.battleships.controller;
 
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 
 import pl.mc.battleships.common.Coordinates;
-import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.*;
 import pl.mc.battleships.model.Model;
-import pl.mc.battleships.view.Connection;
+import pl.mc.battleships.view.LocalConnection;
 
 /**
  * @author mc
@@ -18,12 +16,9 @@ import pl.mc.battleships.view.Connection;
  */
 public class Controller implements Runnable {
   /** References to other classes */
-  private final Connection localView, remoteView;
   private final BlockingQueue<GameEvent> eventQueue;
-  private final Model model;
-  
-  /** Lists of ships left to place on players boards */
-  private final List<ShipType> playerOneShipsLeft, playerTwoShipsLeft;
+  private final Server server;
+  private Model model;
   
   /** Map associating GameEvents with appropriate actions */
   private final Map<Class<? extends GameEvent>, GameAction> eventActionMap;
@@ -36,26 +31,24 @@ public class Controller implements Runnable {
   private static Controller instance = null;
   /** @return Controller class instance. */
   public static synchronized Controller getInstance(
-      BlockingQueue<GameEvent> queue, Connection viewConnection) {
+      BlockingQueue<GameEvent> queue, LocalConnection viewConnection) {
     if(instance == null) instance = new Controller(queue, viewConnection);
     return instance;
   }
   
   /** Controller class constructor. */
-  private Controller(BlockingQueue<GameEvent> queue, Connection viewConnection) {
+  private Controller(BlockingQueue<GameEvent> queue, LocalConnection viewConnection) {
     //creating and connecting to another objects
     eventQueue = queue;
     model = new Model();
-    localView = viewConnection;
-    remoteView = new Server(queue);
-    Thread thread = new Thread((Runnable)remoteView);
+    server = new Server(queue, viewConnection);
+    Thread thread = new Thread((Runnable)server);
     thread.start();
     
-    //filling event map and ship lists
-    playerOneShipsLeft = model.generateShipSet();
-    playerTwoShipsLeft = model.generateShipSet();
+    //filling event map
     eventActionMap = new HashMap<Class<? extends GameEvent>, GameAction>();
     fillEventActionMap();
+    state = null;
   }
   
   /** Main Controller method - responsible for reading objects
@@ -79,34 +72,30 @@ public class Controller implements Runnable {
     //handling player two connected event
     eventActionMap.put(PlayerTwoConnectedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        localView.sendActionEvent(new PlaceShipAction(playerOneShipsLeft.get(0)));
-        remoteView.sendActionEvent(new PlaceShipAction(playerTwoShipsLeft.get(0)));
+        server.sendActionEventToPlayerOne(new PlaceShipAction(model.getNextShipForPlayerOne()));
+        server.sendActionEventToPlayerTwo(new PlaceShipAction(model.getNextShipForPlayerTwo()));
       }
     });
     
     //handling player one ship placement event
     eventActionMap.put(PlayerOneShipPlacedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        if(playerOneShipsLeft.isEmpty()) return;
+        if(model.playerOnePlacedAllShips()) return;
         PlayerOneShipPlacedEvent event = (PlayerOneShipPlacedEvent) e;
         
-        if(model.putPlayerOneShip(new Coordinates(event.getX(), event.getY()), event.getShipType())) {
-          playerOneShipsLeft.remove(event.getShipType());
-          localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
-        } else
-          localView.sendActionEvent(new SendMessageAction("Ship cannot be placed in that place! Try again."));
+        if(model.putAndCheckPlayerOneShip(new Coordinates(event.getX(), event.getY()), event.getShipType()))
+          server.sendActionEventToPlayerOne(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        else
+          server.sendActionEventToPlayerOne(new SendMessageAction("Ship cannot be placed in that place! Try again."));
         
+        if(!model.playerOnePlacedAllShips())
+          server.sendActionEventToPlayerOne(new PlaceShipAction(model.getNextShipForPlayerOne()));
+        else
+          server.sendActionEventToPlayerOne(new OpponentTurnAction());
         
-        if(!playerOneShipsLeft.isEmpty())
-          localView.sendActionEvent(new PlaceShipAction(playerOneShipsLeft.get(0)));
-        else { 
-          if (playerTwoShipsLeft.isEmpty()) {
-            localView.sendActionEvent(new SendMessageAction("Your turn."));
-            remoteView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
-            state = State.PLAYER_ONE_TURN;
-          } else {
-            localView.sendActionEvent(new SendMessageAction("Please wait for another player."));
-          }
+        if(model.playerOnePlacedAllShips() && model.playerTwoPlacedAllShips()) {
+          server.sendActionEventToPlayerTwo(new PlayerTurnAction());
+          state = State.PLAYER_TWO_TURN;
         }
           
       }
@@ -115,26 +104,22 @@ public class Controller implements Runnable {
     //handling player two ship placement event
     eventActionMap.put(PlayerTwoShipPlacedEvent.class, new GameAction() {
       @Override public void execute(GameEvent e) {
-        if(playerTwoShipsLeft.isEmpty()) return;
+        if(model.playerTwoPlacedAllShips()) return;
         PlayerTwoShipPlacedEvent event = (PlayerTwoShipPlacedEvent) e;
         
-        if(model.putPlayerTwoShip(new Coordinates(event.getX(), event.getY()), event.getShipType()))
-          playerTwoShipsLeft.remove(event.getShipType());
+        if(model.putAndCheckPlayerTwoShip(new Coordinates(event.getX(), event.getY()), event.getShipType()))
+          server.sendActionEventToPlayerTwo(new RefreshViewAction(model.generatePlayerTwoDataPack()));
         else
-          remoteView.sendActionEvent(new SendMessageAction("Ship cannot be placed in that place! Try again."));
+          server.sendActionEventToPlayerTwo(new SendMessageAction("Ship cannot be placed in that place! Try again."));
         
-        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        if(!model.playerTwoPlacedAllShips())
+          server.sendActionEventToPlayerTwo(new PlaceShipAction(model.getNextShipForPlayerTwo()));
+        else
+          server.sendActionEventToPlayerTwo(new OpponentTurnAction());
         
-        if(!playerTwoShipsLeft.isEmpty())
-          remoteView.sendActionEvent(new PlaceShipAction(playerTwoShipsLeft.get(0)));
-        else { 
-          if (playerOneShipsLeft.isEmpty()) {
-            remoteView.sendActionEvent(new SendMessageAction("Your turn."));
-            localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
-            state = State.PLAYER_TWO_TURN;
-          } else {
-            remoteView.sendActionEvent(new SendMessageAction("Please wait for another player."));
-          }
+        if(model.playerOnePlacedAllShips() && model.playerTwoPlacedAllShips()) {
+          server.sendActionEventToPlayerOne(new PlayerTurnAction());
+          state = State.PLAYER_ONE_TURN;
         }
  
       }
@@ -148,13 +133,19 @@ public class Controller implements Runnable {
         
         boolean result = model.checkPlayerOneShot(new Coordinates(event.getX(), event.getY()));
         
-        localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
-        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
-          
         if(!result) {
-          remoteView.sendActionEvent(new SendMessageAction("Your turn."));
-          localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
+          server.sendActionEventToPlayerOne(new OpponentTurnAction());
+          server.sendActionEventToPlayerTwo(new PlayerTurnAction());
           state = State.PLAYER_TWO_TURN;
+        }
+          
+        server.sendActionEventToPlayerOne(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        server.sendActionEventToPlayerTwo(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        
+        if(model.playerOneWon()) {
+          server.sendActionEventToPlayerOne(new PlayerWonAction());
+          server.sendActionEventToPlayerTwo(new PlayerLostAction());
+          state = null;
         }
       }
     });
@@ -167,14 +158,31 @@ public class Controller implements Runnable {
         
         boolean result = model.checkPlayerTwoShot(new Coordinates(event.getX(), event.getY()));
         
-        localView.sendActionEvent(new RefreshViewAction(model.generatePlayerOneDataPack()));
-        remoteView.sendActionEvent(new RefreshViewAction(model.generatePlayerTwoDataPack()));
-        
         if(!result) {
-          remoteView.sendActionEvent(new SendMessageAction("Your turn."));
-          localView.sendActionEvent(new SendMessageAction("Please wait for your turn."));
-          state = State.PLAYER_TWO_TURN;
+          server.sendActionEventToPlayerOne(new PlayerTurnAction());
+          server.sendActionEventToPlayerTwo(new OpponentTurnAction());
+          state = State.PLAYER_ONE_TURN;
         }
+        
+        server.sendActionEventToPlayerOne(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        server.sendActionEventToPlayerTwo(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        
+        if(model.playerTwoWon()) {
+          server.sendActionEventToPlayerOne(new PlayerLostAction());
+          server.sendActionEventToPlayerTwo(new PlayerWonAction());
+          state = null;
+        }
+      }
+    });
+  
+    //handling player two shot event
+    eventActionMap.put(NewGameEvent.class, new GameAction() {
+      @Override public void execute(GameEvent e) {
+        model = new Model();
+        server.sendActionEventToPlayerOne(new RefreshViewAction(model.generatePlayerOneDataPack()));
+        server.sendActionEventToPlayerTwo(new RefreshViewAction(model.generatePlayerTwoDataPack()));
+        server.sendActionEventToPlayerOne(new PlaceShipAction(model.getNextShipForPlayerOne()));
+        server.sendActionEventToPlayerTwo(new PlaceShipAction(model.getNextShipForPlayerTwo()));
       }
     });
   }

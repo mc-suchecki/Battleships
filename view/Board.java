@@ -54,12 +54,12 @@ class Board extends JPanel {
     if(shotsBoard != null && shipsBoard != null) {
       for(int i = 0; i != 10; ++i)
         for(int j = 0; j != 10; ++j) {
+          if(shipsBoard[i][j] != null)
+            g.drawImage(imageMap.get(shipsBoard[i][j]), i*40, j*40, null);
           if(shotsBoard[i][j] == ShotField.HIT)
             g.drawImage(hit,  i*40, j*40, null);
           if(shotsBoard[i][j] == ShotField.MISHIT)
             g.drawImage(mishit,  i*40, j*40, null);
-          if(shipsBoard[i][j] != null)
-            g.drawImage(imageMap.get(shipsBoard[i][j]), i*40, j*40, null);
         }
     }
   }
@@ -75,9 +75,9 @@ class Board extends JPanel {
   private void fillImageMap() {
     Image shipImage;
     try {
-      shipImage = ImageIO.read(getClass().getResource("img/patrol_boat.gif"));
+      shipImage = ImageIO.read(getClass().getResource("img/patrol_boat.png"));
       imageMap.put(ShipType.PATROL_BOAT, shipImage);
-      shipImage = ImageIO.read(getClass().getResource("img/patrol_boat_sunken.gif"));
+      shipImage = ImageIO.read(getClass().getResource("img/patrol_boat_sunken.png"));
       imageMap.put(ShipType.PATROL_BOAT_SUNKEN, shipImage);
       shipImage = ImageIO.read(getClass().getResource("img/cruiser_horizontal.gif"));
       imageMap.put(ShipType.CRUISER_HORIZONTAL, shipImage);

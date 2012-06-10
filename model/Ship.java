@@ -12,7 +12,7 @@ import pl.mc.battleships.common.ShipType;
 class Ship {
   private final List<Mast> mastsList;
   private final ShipType shipType;
-  private Boolean sunken;
+  private boolean sunken;
 
   /** Ship class constructor
    *  @throws IllegalArgumentException if ship does not fit into the board.
@@ -38,14 +38,14 @@ class Ship {
   }
   
   /** Method for shooting the ship's masts */
-  public Boolean shot(final Coordinates coords) {
-    Boolean result = false;
+  public boolean shotAndCheckIfHit(final Coordinates coords) {
+    boolean result = false;
     sunken = true;
     
     //shooting the masts
     for(Mast mast : mastsList)
-      if(mast.shot(coords)) result = true;
-    
+      if(mast.shotAndCheck(coords)) result = true;
+      
     //checking if ship has sunken
     for(Mast mast : mastsList)
       if(!mast.isHit()) sunken = false;
@@ -54,19 +54,19 @@ class Ship {
   }
 
   /** @return true if the ship is sunken */
-  public Boolean isSunken() {
+  public boolean isSunken() {
     return sunken;
   }
 
   /** @return true if another ship collides with this one */
-  public Boolean checkIfCollides(final Ship another) {
+  public boolean checkIfCollides(final Ship another) {
     
     //check masts one by one
     for(Mast thisMast : mastsList)
       for(Mast anotherMast : another.mastsList)
         if(thisMast.checkIfCollides(anotherMast)) return true;
     
-    //everyting ok
+    //everything ok
     return false;
   }
   
@@ -84,7 +84,7 @@ class Ship {
 /** Class representing ship's mast */
 class Mast {
   private final Coordinates coordinates;
-  private Boolean hit;
+  private boolean hit;
   
   /** Mast constructor */
   public Mast(final int x, final int y) {
@@ -93,7 +93,9 @@ class Mast {
   }
 
   /** Method for checking if shot hit the mast */
-  public Boolean shot(final Coordinates coords) {
+  public boolean shotAndCheck(final Coordinates coords) {
+    if(getCoordinates().getX() != coords.getX() ||
+       getCoordinates().getY() != coords.getY()) return false;
     if(getCoordinates().getX() == coords.getX() &&
        getCoordinates().getY() == coords.getY()) hit = true;
     return hit;
@@ -105,7 +107,7 @@ class Mast {
   }
   
   /** @return true if another mast collides with this one */
-  public Boolean checkIfCollides(final Mast another) {
+  public boolean checkIfCollides(final Mast another) {
     if(Math.abs(this.getCoordinates().getX() - another.getCoordinates().getX()) <= 1 &&
        Math.abs(this.getCoordinates().getY() - another.getCoordinates().getY()) <= 1)
       return true;

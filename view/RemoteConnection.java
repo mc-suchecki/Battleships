@@ -87,4 +87,7 @@ public class RemoteConnection implements Runnable, Connection {
 
   /** Blanked (unnecessary) method from Connection interface */
   @Override public void sendActionEvent(final ActionEvent event) {}
+
+  /** Remote client has not got permision to reset the game */
+  @Override public void sendNewGameEvent() {}
 }

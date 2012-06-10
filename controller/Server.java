@@ -7,26 +7,27 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
-import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.ActionEvent;
 import pl.mc.battleships.common.events.GameEvent;
 import pl.mc.battleships.common.events.PlayerTwoConnectedEvent;
-import pl.mc.battleships.view.Connection;
+import pl.mc.battleships.view.LocalConnection;
 
 /**
  * @author mc
  * Class responsible for communicating with remote View (on server side).
  */
-public class Server implements Runnable, Connection {
+public class Server implements Runnable {
   private final BlockingQueue<GameEvent> eventQueue;
   private ServerSocket serverSocket;
   private Socket socket;
   private ObjectOutputStream outputStream;
   private ObjectInputStream inputStream;  
+  private final LocalConnection localView;
 
   /** Server class constructor */
-  public Server(BlockingQueue<GameEvent> queue) {
+  public Server(BlockingQueue<GameEvent> queue, LocalConnection viewConnection) {
     eventQueue = queue;
+    localView = viewConnection;
   }
   
   /** Main Server method - responsible for reading objects
@@ -54,8 +55,14 @@ public class Server implements Runnable, Connection {
       } catch(ClassNotFoundException e) {
         e.printStackTrace();
       } catch(IOException e1) {
-        //TODO handle client disconnection right here
-        e1.printStackTrace();
+        try {
+          inputStream.close();
+          outputStream.close();
+          socket.close();  
+          serverSocket.close();
+        } catch(IOException e) {
+          e.printStackTrace();
+        }
       } catch(InterruptedException e2) {
         e2.printStackTrace();
       }
@@ -74,8 +81,13 @@ public class Server implements Runnable, Connection {
     }  
   }
   
+  /** Method responsible for invoking View methods locally */
+  public void sendActionEventToPlayerOne(final ActionEvent event) {
+    localView.sendActionEvent(event);
+  }
+  
   /** Method responsible for invoking View methods through Internet */
-  @Override public void sendActionEvent(final ActionEvent event) {
+  public void sendActionEventToPlayerTwo(final ActionEvent event) {
     try {
       outputStream.writeObject(event);
     } catch(IOException e) {
@@ -83,7 +95,4 @@ public class Server implements Runnable, Connection {
     }
   }
   
-  /** Blanked (unnecessary) methods from Connection interface */
-  @Override public void sendShotEvent(final int x, final int y) {}
-  @Override public void sendShipPlacedEvent(final int x, final int y, final ShipType ship) {}
 }

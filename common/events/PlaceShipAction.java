@@ -19,6 +19,7 @@ public class PlaceShipAction extends ActionEvent {
   /* @see pl.mc.battleships.common.events.ActionEvent#execute(pl.mc.battleships.view.View) */
   @Override public void execute(View view) {
     view.placeShip(shipToPlace);
+    view.changeStatus("Please place your ship on the board (press right mouse button to rotate).");
   }
 
 }

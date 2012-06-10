@@ -5,6 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import pl.mc.battleships.common.ShipType;
 import pl.mc.battleships.common.events.ActionEvent;
 import pl.mc.battleships.common.events.GameEvent;
+import pl.mc.battleships.common.events.NewGameEvent;
 import pl.mc.battleships.common.events.PlayerOneShipPlacedEvent;
 import pl.mc.battleships.common.events.PlayerOneShotEvent;
 
@@ -42,6 +43,15 @@ public class LocalConnection implements Connection {
     GameEvent event = new PlayerOneShipPlacedEvent(x, y, ship);
     try {
       eventQueue.put(event);
+    } catch(InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /** Method responsible for sending new game event to controller */
+  @Override public void sendNewGameEvent() {
+    try {
+      eventQueue.put(new NewGameEvent());
     } catch(InterruptedException e) {
       e.printStackTrace();
     }
